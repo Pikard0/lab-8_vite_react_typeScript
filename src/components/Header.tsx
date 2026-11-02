@@ -13,7 +13,7 @@ export const Header: React.FC = () => {
           <span className="header__badge">Лабораторна робота №8</span>
         </div>
         <p className="header__subtitle">
-          Простий та ефективний планувальник навчальних завдань
+          Мій список завдань та дедлайнів на семестр
         </p>
       </div>
     </header>

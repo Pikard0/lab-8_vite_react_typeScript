@@ -18,14 +18,14 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
 
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
-      setError('Назва завдання є обов’язковою для заповнення!');
+      setError('Введіть назву завдання');
       return;
     }
 
     onAddTask({
       title: trimmedTitle,
       description: description.trim(),
-      category: category.trim() || 'Загальне',
+      category: category.trim() || 'Інше',
       priority,
     });
 
@@ -46,7 +46,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
 
   return (
     <section className="task-form-card">
-      <h2 className="task-form-card__title">➕ Додати нове навчальне завдання</h2>
+      <h2 className="task-form-card__title">Додати завдання</h2>
       <form className="task-form" onSubmit={handleSubmit} noValidate>
         <div className="task-form__field">
           <label htmlFor="task-title" className="task-form__label">
@@ -56,7 +56,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
             id="task-title"
             type="text"
             className={`task-form__input ${error ? 'task-form__input--error' : ''}`}
-            placeholder="Наприклад: Опрацювати React Props & State"
+            placeholder="Наприклад: Здати лабу з React"
             value={title}
             onChange={handleTitleChange}
           />
@@ -70,7 +70,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
           <textarea
             id="task-description"
             className="task-form__textarea"
-            placeholder="Опишіть завдання, кроки виконання або посилання..."
+            placeholder="Що саме треба зробити..."
             rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -87,7 +87,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
               type="text"
               list="categories-list"
               className="task-form__input"
-              placeholder="Виберіть або введіть категорію"
+              placeholder="Предмет (наприклад: React)"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             />
@@ -97,7 +97,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
               <option value="JavaScript" />
               <option value="HTML & CSS" />
               <option value="Git" />
-              <option value="Навчання" />
+              <option value="Інше" />
             </datalist>
           </div>
 
@@ -111,9 +111,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
               value={priority}
               onChange={(e) => setPriority(e.target.value as Priority)}
             >
-              <option value="low">Низький (Low)</option>
-              <option value="medium">Середній (Medium)</option>
-              <option value="high">Високий (High)</option>
+              <option value="low">Низький</option>
+              <option value="medium">Середній</option>
+              <option value="high">Високий</option>
             </select>
           </div>
         </div>

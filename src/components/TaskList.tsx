@@ -26,7 +26,7 @@ export const TaskList: React.FC<TaskListProps> = ({
           </span>
           <h3 className="task-list__empty-title">Завдань поки немає</h3>
           <p className="task-list__empty-desc">
-            Додайте перше навчальне завдання за допомогою форми вище.
+            Додайте перше завдання за допомогою форми зверху.
           </p>
         </div>
       </div>
@@ -43,7 +43,7 @@ export const TaskList: React.FC<TaskListProps> = ({
           </span>
           <h3 className="task-list__empty-title">За цим фільтром завдань немає</h3>
           <p className="task-list__empty-desc">
-            Спробуйте змінити категорію, статус фільтра або скинути рядок пошуку.
+            Спробуйте перемкнути фільтр або очистити пошук.
           </p>
         </div>
       </div>

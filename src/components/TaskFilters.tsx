@@ -90,7 +90,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
         <input
           type="text"
           className="task-filters__search-input"
-          placeholder="Пошук завдань за назвою або описом..."
+          placeholder="Пошук завдання..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
         />
