@@ -21,7 +21,6 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete }) 
       aria-label={`Завдання: ${task.title}`}
     >
       <div className="task-item__main">
-        {/* Чекбокс перемикання стану */}
         <label className="task-item__checkbox-label" title={task.completed ? 'Позначити невиконаним' : 'Позначити виконаним'}>
           <input
             type="checkbox"
@@ -32,7 +31,6 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete }) 
           <span className="task-item__checkbox-custom" />
         </label>
 
-        {/* Контент завдання */}
         <div className="task-item__content">
           <div className="task-item__header-row">
             <h3
@@ -43,13 +41,12 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete }) 
               {task.title}
             </h3>
 
-            {/* Бейджі метаданих */}
             <div className="task-item__badges">
               <span className="task-item__category-badge">{task.category}</span>
               <span
                 className={`task-item__priority-badge task-item__priority-badge--${task.priority}`}
               >
-                ● {priorityLabels[task.priority]}
+                {priorityLabels[task.priority]}
               </span>
             </div>
           </div>
@@ -72,13 +69,12 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete }) 
                   : 'task-item__status-text--pending'
               }`}
             >
-              {task.completed ? '✓ Виконано' : '⏳ Потрібно зробити'}
+              {task.completed ? 'Виконано' : 'В процесі'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Кнопка видалення */}
       <div className="task-item__actions">
         <button
           type="button"
@@ -87,7 +83,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete }) 
           title="Видалити завдання"
           aria-label={`Видалити завдання ${task.title}`}
         >
-          🗑️
+          Видалити
         </button>
       </div>
     </article>

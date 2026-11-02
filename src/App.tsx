@@ -15,17 +15,11 @@ const priorityWeight: Record<Priority, number> = {
 };
 
 export const App: React.FC = () => {
-  // Головний локальний стан списку завдань
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
-
-  // Стан для фільтрації
   const [filter, setFilter] = useState<FilterType>('all');
-
-  // Додаткові стани: пошук та сортування
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [prioritySort, setPrioritySort] = useState<PrioritySortOrder>('none');
 
-  // 1. Додавання завдання (Immutable update)
   const handleAddTask = (newTaskData: Omit<Task, 'id' | 'completed'>) => {
     const newTask: Task = {
       ...newTaskData,
@@ -36,7 +30,6 @@ export const App: React.FC = () => {
     setTasks((prevTasks) => [newTask, ...prevTasks]);
   };
 
-  // 2. Перемикання стану виконання (Immutable update)
   const handleToggleTask = (id: number) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
@@ -45,17 +38,14 @@ export const App: React.FC = () => {
     );
   };
 
-  // 3. Видалення завдання (Immutable update)
   const handleDeleteTask = (id: number) => {
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
   };
 
-  // 4. Очищення всіх виконаних завдань (Immutable update)
   const handleClearCompleted = () => {
     setTasks((prevTasks) => prevTasks.filter((task) => !task.completed));
   };
 
-  // Підрахунок кількості завдань для фільтрів (без додаткового state)
   const filterCounts = useMemo(() => {
     const total = tasks.length;
     const completed = tasks.filter((t) => t.completed).length;
@@ -63,18 +53,15 @@ export const App: React.FC = () => {
     return { all: total, completed, active };
   }, [tasks]);
 
-  // Фільтрація та сортування списку завдань (вихідний масив tasks НЕ змінюється)
   const displayedTasks = useMemo(() => {
     let result = [...tasks];
 
-    // Фільтрація за статусом
     if (filter === 'completed') {
       result = result.filter((task) => task.completed);
     } else if (filter === 'active') {
       result = result.filter((task) => !task.completed);
     }
 
-    // Фільтрація за пошуковим запитом (назва або опис)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       result = result.filter(
@@ -85,7 +72,6 @@ export const App: React.FC = () => {
       );
     }
 
-    // Сортування за пріоритетом
     if (prioritySort === 'desc') {
       result.sort((a, b) => priorityWeight[b.priority] - priorityWeight[a.priority]);
     } else if (prioritySort === 'asc') {
@@ -98,20 +84,16 @@ export const App: React.FC = () => {
   return (
     <div className="study-planner">
       <div className="study-planner__container">
-        {/* Шапка застосунку */}
         <Header />
 
         <main className="study-planner__content">
-          {/* Форма додавання нового завдання */}
           <TaskForm onAddTask={handleAddTask} />
 
-          {/* Статистика завдань */}
           <TaskStats
             tasks={tasks}
             onClearCompleted={handleClearCompleted}
           />
 
-          {/* Панель фільтрів та пошуку */}
           <TaskFilters
             currentFilter={filter}
             onFilterChange={setFilter}
@@ -122,7 +104,6 @@ export const App: React.FC = () => {
             onPrioritySortChange={setPrioritySort}
           />
 
-          {/* Список завдань з умовним рендерингом */}
           <TaskList
             tasks={displayedTasks}
             hasAnyTasks={tasks.length > 0}
@@ -133,7 +114,7 @@ export const App: React.FC = () => {
 
         <footer className="study-planner__footer">
           <p>
-            Study Planner &copy; 2026. Створено з використанням React 19, TypeScript та SCSS (BEM).
+            Study Planner &copy; 2026. React 19, TypeScript, SCSS (BEM).
           </p>
         </footer>
       </div>

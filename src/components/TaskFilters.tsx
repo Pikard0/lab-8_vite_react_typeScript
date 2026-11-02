@@ -28,7 +28,6 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
   return (
     <div className="task-filters">
       <div className="task-filters__controls-row">
-        {/* Кнопки вибору фільтрів за статусом */}
         <div className="task-filters__buttons" role="group" aria-label="Фільтри завдань">
           <button
             type="button"
@@ -64,7 +63,6 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
           </button>
         </div>
 
-        {/* Додаткове завдання 2: Сортування за пріоритетом */}
         <div className="task-filters__sort">
           <label htmlFor="priority-sort" className="task-filters__sort-label">
             Сортування:
@@ -82,11 +80,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
         </div>
       </div>
 
-      {/* Додаткове завдання 1: Пошук завдань за назвою */}
       <div className="task-filters__search-wrapper">
-        <span className="task-filters__search-icon" aria-hidden="true">
-          🔍
-        </span>
         <input
           type="text"
           className="task-filters__search-input"

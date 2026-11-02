@@ -187,16 +187,18 @@
   }
 
   &__delete-btn {
-    padding: 0.4rem 0.6rem;
+    padding: 0.35rem 0.65rem;
     border-radius: $radius-sm;
-    font-size: 1rem;
-    opacity: 0.7;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: $color-danger;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    background-color: transparent;
     transition: $transition-base;
 
     &:hover {
-      opacity: 1;
       background-color: $color-danger-light;
-      transform: scale(1.1);
+      border-color: $color-danger;
     }
   }
 }

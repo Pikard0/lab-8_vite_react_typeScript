@@ -29,7 +29,6 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
       priority,
     });
 
-    // Очищення форми після успішного додавання
     setTitle('');
     setDescription('');
     setCategory('React');

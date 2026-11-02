@@ -17,7 +17,6 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, onClearCompleted })
     <section className="task-stats">
       <div className="task-stats__grid">
         <div className="task-stats__card task-stats__card--total">
-          <span className="task-stats__icon">📋</span>
           <div className="task-stats__info">
             <span className="task-stats__label">Загалом завдань</span>
             <span className="task-stats__value">{totalCount}</span>
@@ -25,7 +24,6 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, onClearCompleted })
         </div>
 
         <div className="task-stats__card task-stats__card--active">
-          <span className="task-stats__icon">⏳</span>
           <div className="task-stats__info">
             <span className="task-stats__label">В процесі</span>
             <span className="task-stats__value">{activeCount}</span>
@@ -33,7 +31,6 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, onClearCompleted })
         </div>
 
         <div className="task-stats__card task-stats__card--completed">
-          <span className="task-stats__icon">✅</span>
           <div className="task-stats__info">
             <span className="task-stats__label">Виконано</span>
             <span className="task-stats__value">{completedCount}</span>
@@ -43,7 +40,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, onClearCompleted })
 
       <div className="task-stats__progress-wrapper">
         <div className="task-stats__progress-header">
-          <span className="task-stats__progress-title">Прогрес виконання плану:</span>
+          <span className="task-stats__progress-title">Прогрес виконання:</span>
           <span className="task-stats__progress-percent">{progressPercent}%</span>
         </div>
         <div className="task-stats__progress-bar">
@@ -62,7 +59,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, onClearCompleted })
             onClick={onClearCompleted}
             title="Видалити всі завершені завдання зі списку"
           >
-            🗑️ Очистити виконані ({completedCount})
+            Очистити виконані ({completedCount})
           </button>
         </div>
       )}

@@ -16,14 +16,10 @@ export const TaskList: React.FC<TaskListProps> = ({
   onToggle,
   onDelete,
 }) => {
-  // Умовний рендеринг 1: Якщо взагалі немає завдань
   if (!hasAnyTasks) {
     return (
       <div className="task-list task-list--empty">
         <div className="task-list__empty-state">
-          <span className="task-list__empty-icon" role="img" aria-label="empty">
-            📝
-          </span>
           <h3 className="task-list__empty-title">Завдань поки немає</h3>
           <p className="task-list__empty-desc">
             Додайте перше завдання за допомогою форми зверху.
@@ -33,14 +29,10 @@ export const TaskList: React.FC<TaskListProps> = ({
     );
   }
 
-  // Умовний рендеринг 2: Якщо фільтр або пошук дав порожній результат
   if (tasks.length === 0) {
     return (
       <div className="task-list task-list--empty">
         <div className="task-list__empty-state">
-          <span className="task-list__empty-icon" role="img" aria-label="no-results">
-            🔍
-          </span>
           <h3 className="task-list__empty-title">За цим фільтром завдань немає</h3>
           <p className="task-list__empty-desc">
             Спробуйте перемкнути фільтр або очистити пошук.
@@ -50,7 +42,6 @@ export const TaskList: React.FC<TaskListProps> = ({
     );
   }
 
-  // Рендеринг списку за допомогою методу map зі стабільним key={task.id}
   return (
     <div className="task-list">
       <div className="task-list__items">
