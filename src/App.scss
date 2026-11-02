@@ -1,0 +1,24 @@
+@use './styles/variables' as *;
+
+.study-planner {
+  min-height: 100vh;
+  padding: 2rem 1rem 3rem;
+  background-color: $color-bg;
+
+  &__container {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__footer {
+    text-align: center;
+    margin-top: 3rem;
+    font-size: 0.8125rem;
+    color: $color-text-muted;
+  }
+}

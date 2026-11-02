@@ -1,122 +1,144 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import React, { useState, useMemo } from 'react';
+import type { Task, FilterType, PrioritySortOrder, Priority } from './types/task';
+import { initialTasks } from './data/initialTasks';
+import { Header } from './components/Header';
+import { TaskForm } from './components/TaskForm';
+import { TaskStats } from './components/TaskStats';
+import { TaskFilters } from './components/TaskFilters';
+import { TaskList } from './components/TaskList';
+import './App.scss';
 
-function App() {
-  const [count, setCount] = useState(0)
+const priorityWeight: Record<Priority, number> = {
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
+export const App: React.FC = () => {
+  // Головний локальний стан списку завдань
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+
+  // Стан для фільтрації
+  const [filter, setFilter] = useState<FilterType>('all');
+
+  // Додаткові стани: пошук та сортування
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [prioritySort, setPrioritySort] = useState<PrioritySortOrder>('none');
+
+  // 1. Додавання завдання (Immutable update)
+  const handleAddTask = (newTaskData: Omit<Task, 'id' | 'completed'>) => {
+    const newTask: Task = {
+      ...newTaskData,
+      id: Date.now(),
+      completed: false,
+    };
+
+    setTasks((prevTasks) => [newTask, ...prevTasks]);
+  };
+
+  // 2. Перемикання стану виконання (Immutable update)
+  const handleToggleTask = (id: number) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
+    );
+  };
+
+  // 3. Видалення завдання (Immutable update)
+  const handleDeleteTask = (id: number) => {
+    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+  };
+
+  // 4. Очищення всіх виконаних завдань (Immutable update)
+  const handleClearCompleted = () => {
+    setTasks((prevTasks) => prevTasks.filter((task) => !task.completed));
+  };
+
+  // Підрахунок кількості завдань для фільтрів (без додаткового state)
+  const filterCounts = useMemo(() => {
+    const total = tasks.length;
+    const completed = tasks.filter((t) => t.completed).length;
+    const active = total - completed;
+    return { all: total, completed, active };
+  }, [tasks]);
+
+  // Фільтрація та сортування списку завдань (вихідний масив tasks НЕ змінюється)
+  const displayedTasks = useMemo(() => {
+    let result = [...tasks];
+
+    // Фільтрація за статусом
+    if (filter === 'completed') {
+      result = result.filter((task) => task.completed);
+    } else if (filter === 'active') {
+      result = result.filter((task) => !task.completed);
+    }
+
+    // Фільтрація за пошуковим запитом (назва або опис)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (task) =>
+          task.title.toLowerCase().includes(query) ||
+          task.description.toLowerCase().includes(query) ||
+          task.category.toLowerCase().includes(query)
+      );
+    }
+
+    // Сортування за пріоритетом
+    if (prioritySort === 'desc') {
+      result.sort((a, b) => priorityWeight[b.priority] - priorityWeight[a.priority]);
+    } else if (prioritySort === 'asc') {
+      result.sort((a, b) => priorityWeight[a.priority] - priorityWeight[b.priority]);
+    }
+
+    return result;
+  }, [tasks, filter, searchQuery, prioritySort]);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
+    <div className="study-planner">
+      <div className="study-planner__container">
+        {/* Шапка застосунку */}
+        <Header />
+
+        <main className="study-planner__content">
+          {/* Форма додавання нового завдання */}
+          <TaskForm onAddTask={handleAddTask} />
+
+          {/* Статистика завдань */}
+          <TaskStats
+            tasks={tasks}
+            onClearCompleted={handleClearCompleted}
+          />
+
+          {/* Панель фільтрів та пошуку */}
+          <TaskFilters
+            currentFilter={filter}
+            onFilterChange={setFilter}
+            counts={filterCounts}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            prioritySort={prioritySort}
+            onPrioritySortChange={setPrioritySort}
+          />
+
+          {/* Список завдань з умовним рендерингом */}
+          <TaskList
+            tasks={displayedTasks}
+            hasAnyTasks={tasks.length > 0}
+            onToggle={handleToggleTask}
+            onDelete={handleDeleteTask}
+          />
+        </main>
+
+        <footer className="study-planner__footer">
           <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+            Study Planner &copy; 2026. Створено з використанням React 19, TypeScript та SCSS (BEM).
           </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+        </footer>
+      </div>
+    </div>
+  );
+};
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
-}
-
-export default App
+export default App;
