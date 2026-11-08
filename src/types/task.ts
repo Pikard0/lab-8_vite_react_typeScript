@@ -7,8 +7,27 @@ export interface Task {
   completed: boolean;
   priority: Priority;
   category: string;
+  pendingDelete?: boolean;
 }
 
 export type FilterType = 'all' | 'completed' | 'active';
 
 export type PrioritySortOrder = 'none' | 'asc' | 'desc';
+
+export type TaskAction =
+  | { type: 'add'; payload: Omit<Task, 'id' | 'completed' | 'pendingDelete'> }
+  | { type: 'toggle'; payload: number }
+  | { type: 'update'; payload: { id: number; data: Omit<Task, 'id' | 'pendingDelete'> } }
+  | { type: 'requestDelete'; payload: number }
+  | { type: 'confirmDelete'; payload: number }
+  | { type: 'undoDelete'; payload: number }
+  | { type: 'clearCompleted' }
+  | { type: 'reset' };
+
+export interface ToastNotification {
+  id: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  isUndoable?: boolean;
+  countdown?: number;
+}

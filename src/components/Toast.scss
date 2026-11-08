@@ -1,0 +1,95 @@
+@use '../styles/variables' as *;
+
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 1000;
+  min-width: 300px;
+  max-width: 440px;
+  background-color: #1e293b;
+  color: #ffffff;
+  border-radius: $radius-md;
+  box-shadow: $shadow-lg;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  &--info {
+    border-left: 4px solid $color-primary;
+  }
+
+  &--success {
+    border-left: 4px solid $color-success;
+  }
+
+  &--warning {
+    border-left: 4px solid $color-warning;
+  }
+
+  &--error {
+    border-left: 4px solid $color-danger;
+  }
+
+  &__content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.875rem 1rem;
+    gap: 1rem;
+  }
+
+  &__message {
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  &__undo-btn {
+    background-color: #ffffff;
+    color: #0f172a;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.35rem 0.75rem;
+    border-radius: $radius-sm;
+    transition: $transition-base;
+
+    &:hover {
+      background-color: #e2e8f0;
+    }
+  }
+
+  &__close-btn {
+    color: #94a3b8;
+    font-size: 1.25rem;
+    line-height: 1;
+    padding: 0.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: $transition-base;
+
+    &:hover {
+      color: #ffffff;
+    }
+  }
+
+  &__progress-track {
+    width: 100%;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  &__progress-bar {
+    height: 100%;
+    background-color: $color-warning;
+    transition: width 1s linear;
+  }
+}

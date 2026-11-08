@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import type { Priority, Task } from '../types/task';
+import { useTaskContext } from '../hooks/useTaskContext';
 import './TaskForm.scss';
 
-interface TaskFormProps {
-  onAddTask: (task: Omit<Task, 'id' | 'completed'>) => void;
+interface FormFieldsProps {
+  editingTask: Task | null;
+  onSave: (title: string, description: string, category: string, priority: Priority) => void;
+  onCancel: () => void;
 }
 
-export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('React');
-  const [priority, setPriority] = useState<Priority>('medium');
+const FormFields: React.FC<FormFieldsProps> = ({ editingTask, onSave, onCancel }) => {
+  const [title, setTitle] = useState(editingTask ? editingTask.title : '');
+  const [description, setDescription] = useState(editingTask ? editingTask.description : '');
+  const [category, setCategory] = useState(editingTask ? editingTask.category : 'React');
+  const [priority, setPriority] = useState<Priority>(editingTask ? editingTask.priority : 'medium');
   const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -22,18 +25,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
       return;
     }
 
-    onAddTask({
-      title: trimmedTitle,
-      description: description.trim(),
-      category: category.trim() || 'Інше',
-      priority,
-    });
-
-    setTitle('');
-    setDescription('');
-    setCategory('React');
-    setPriority('medium');
-    setError('');
+    onSave(trimmedTitle, description.trim(), category.trim() || 'Інше', priority);
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,7 +37,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
 
   return (
     <section className="task-form-card">
-      <h2 className="task-form-card__title">Додати завдання</h2>
+      <h2 className="task-form-card__title">
+        {editingTask ? 'Редагувати завдання' : 'Додати завдання'}
+      </h2>
       <form className="task-form" onSubmit={handleSubmit} noValidate>
         <div className="task-form__field">
           <label htmlFor="task-title" className="task-form__label">
@@ -118,11 +112,56 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
         </div>
 
         <div className="task-form__actions">
+          {editingTask && (
+            <button
+              type="button"
+              className="task-form__cancel-button"
+              onClick={onCancel}
+            >
+              Скасувати
+            </button>
+          )}
           <button type="submit" className="task-form__submit-button">
-            Додати завдання
+            {editingTask ? 'Зберегти зміни' : 'Додати завдання'}
           </button>
         </div>
       </form>
     </section>
+  );
+};
+
+export const TaskForm: React.FC = () => {
+  const { addTask, updateTask, editingTask, setEditingTask } = useTaskContext();
+
+  const handleSave = (title: string, description: string, category: string, priority: Priority) => {
+    if (editingTask) {
+      updateTask(editingTask.id, {
+        title,
+        description,
+        category,
+        priority,
+        completed: editingTask.completed,
+      });
+    } else {
+      addTask({
+        title,
+        description,
+        category,
+        priority,
+      });
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingTask(null);
+  };
+
+  return (
+    <FormFields
+      key={editingTask ? editingTask.id : 'create'}
+      editingTask={editingTask}
+      onSave={handleSave}
+      onCancel={handleCancel}
+    />
   );
 };

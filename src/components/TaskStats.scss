@@ -101,9 +101,27 @@
   &__actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
     margin-top: 1rem;
     padding-top: 0.75rem;
     border-top: 1px dashed $color-border;
+  }
+
+  &__reset-btn {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: $color-text-muted;
+    background: transparent;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    transition: $transition-base;
+
+    &:hover {
+      background-color: #f3f4f6;
+      color: $color-text-main;
+    }
   }
 
   &__clear-btn {

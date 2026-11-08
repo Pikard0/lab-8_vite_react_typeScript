@@ -28,6 +28,12 @@
     }
   }
 
+  &--pending-delete {
+    background-color: #fffbeb;
+    border: 1px dashed $color-warning;
+    opacity: 0.8;
+  }
+
   &__main {
     display: flex;
     align-items: flex-start;
@@ -179,11 +185,48 @@
     &--pending {
       color: $color-warning;
     }
+
+    &--pending-delete {
+      color: #b45309;
+      font-weight: 600;
+    }
   }
 
   &__actions {
     display: flex;
     align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__edit-btn {
+    padding: 0.35rem 0.65rem;
+    border-radius: $radius-sm;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: $color-primary;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    background-color: transparent;
+    transition: $transition-base;
+
+    &:hover {
+      background-color: $color-primary-light;
+      border-color: $color-primary;
+    }
+  }
+
+  &__undo-inline-btn {
+    padding: 0.35rem 0.65rem;
+    border-radius: $radius-sm;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #b45309;
+    border: 1px solid $color-warning;
+    background-color: #fef3c7;
+    transition: $transition-base;
+
+    &:hover {
+      background-color: #fde68a;
+    }
   }
 
   &__delete-btn {

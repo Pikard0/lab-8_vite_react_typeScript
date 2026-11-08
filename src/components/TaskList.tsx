@@ -1,21 +1,13 @@
 import React from 'react';
-import type { Task } from '../types/task';
+import { useTaskContext } from '../hooks/useTaskContext';
 import { TaskItem } from './TaskItem';
 import './TaskList.scss';
 
-interface TaskListProps {
-  tasks: Task[];
-  hasAnyTasks: boolean;
-  onToggle: (id: number) => void;
-  onDelete: (id: number) => void;
-}
+export const TaskList: React.FC = () => {
+  const { tasks, displayedTasks } = useTaskContext();
 
-export const TaskList: React.FC<TaskListProps> = ({
-  tasks,
-  hasAnyTasks,
-  onToggle,
-  onDelete,
-}) => {
+  const hasAnyTasks = tasks.some((t) => !t.pendingDelete);
+
   if (!hasAnyTasks) {
     return (
       <div className="task-list task-list--empty">
@@ -29,7 +21,7 @@ export const TaskList: React.FC<TaskListProps> = ({
     );
   }
 
-  if (tasks.length === 0) {
+  if (displayedTasks.length === 0) {
     return (
       <div className="task-list task-list--empty">
         <div className="task-list__empty-state">
@@ -45,13 +37,8 @@ export const TaskList: React.FC<TaskListProps> = ({
   return (
     <div className="task-list">
       <div className="task-list__items">
-        {tasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            onToggle={onToggle}
-            onDelete={onDelete}
-          />
+        {displayedTasks.map((task) => (
+          <TaskItem key={task.id} task={task} />
         ))}
       </div>
     </div>

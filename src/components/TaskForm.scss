@@ -93,6 +93,23 @@
   &__actions {
     display: flex;
     justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  &__cancel-button {
+    background-color: transparent;
+    color: $color-text-muted;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    padding: 0.65rem 1.25rem;
+    border-radius: $radius-sm;
+    border: 1px solid $color-border;
+    transition: $transition-base;
+
+    &:hover {
+      background-color: #f3f4f6;
+      color: $color-text-main;
+    }
   }
 
   &__submit-button {

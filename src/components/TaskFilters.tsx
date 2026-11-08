@@ -1,30 +1,19 @@
 import React from 'react';
-import type { FilterType, PrioritySortOrder } from '../types/task';
+import type { PrioritySortOrder } from '../types/task';
+import { useTaskContext } from '../hooks/useTaskContext';
 import './TaskFilters.scss';
 
-interface TaskFiltersProps {
-  currentFilter: FilterType;
-  onFilterChange: (filter: FilterType) => void;
-  counts: {
-    all: number;
-    completed: number;
-    active: number;
-  };
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  prioritySort: PrioritySortOrder;
-  onPrioritySortChange: (sort: PrioritySortOrder) => void;
-}
+export const TaskFilters: React.FC = () => {
+  const {
+    filter,
+    setFilter,
+    counts,
+    searchQuery,
+    setSearchQuery,
+    prioritySort,
+    setPrioritySort,
+  } = useTaskContext();
 
-export const TaskFilters: React.FC<TaskFiltersProps> = ({
-  currentFilter,
-  onFilterChange,
-  counts,
-  searchQuery,
-  onSearchChange,
-  prioritySort,
-  onPrioritySortChange,
-}) => {
   return (
     <div className="task-filters">
       <div className="task-filters__controls-row">
@@ -32,9 +21,9 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
           <button
             type="button"
             className={`task-filters__button ${
-              currentFilter === 'all' ? 'task-filters__button--active' : ''
+              filter === 'all' ? 'task-filters__button--active' : ''
             }`}
-            onClick={() => onFilterChange('all')}
+            onClick={() => setFilter('all')}
           >
             Всі
             <span className="task-filters__badge">{counts.all}</span>
@@ -43,9 +32,9 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
           <button
             type="button"
             className={`task-filters__button ${
-              currentFilter === 'active' ? 'task-filters__button--active' : ''
+              filter === 'active' ? 'task-filters__button--active' : ''
             }`}
-            onClick={() => onFilterChange('active')}
+            onClick={() => setFilter('active')}
           >
             Не виконані
             <span className="task-filters__badge">{counts.active}</span>
@@ -54,9 +43,9 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
           <button
             type="button"
             className={`task-filters__button ${
-              currentFilter === 'completed' ? 'task-filters__button--active' : ''
+              filter === 'completed' ? 'task-filters__button--active' : ''
             }`}
-            onClick={() => onFilterChange('completed')}
+            onClick={() => setFilter('completed')}
           >
             Виконані
             <span className="task-filters__badge">{counts.completed}</span>
@@ -71,7 +60,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
             id="priority-sort"
             className="task-filters__sort-select"
             value={prioritySort}
-            onChange={(e) => onPrioritySortChange(e.target.value as PrioritySortOrder)}
+            onChange={(e) => setPrioritySort(e.target.value as PrioritySortOrder)}
           >
             <option value="none">За замовчуванням</option>
             <option value="desc">Пріоритет: High → Low</option>
@@ -86,13 +75,13 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
           className="task-filters__search-input"
           placeholder="Пошук завдання..."
           value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
         {searchQuery && (
           <button
             type="button"
             className="task-filters__search-clear"
-            onClick={() => onSearchChange('')}
+            onClick={() => setSearchQuery('')}
             aria-label="Очистити пошук"
           >
             ✕

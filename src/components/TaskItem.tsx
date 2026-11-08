@@ -1,11 +1,10 @@
 import React from 'react';
 import type { Priority, Task } from '../types/task';
+import { useTaskContext } from '../hooks/useTaskContext';
 import './TaskItem.scss';
 
 interface TaskItemProps {
   task: Task;
-  onToggle: (id: number) => void;
-  onDelete: (id: number) => void;
 }
 
 const priorityLabels: Record<Priority, string> = {
@@ -14,19 +13,29 @@ const priorityLabels: Record<Priority, string> = {
   high: 'Високий',
 };
 
-export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete }) => {
+export const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
+  const { toggleTask, requestDeleteTask, undoDeleteTask, setEditingTask } = useTaskContext();
+
+  const isPending = Boolean(task.pendingDelete);
+
   return (
     <article
-      className={`task-item ${task.completed ? 'task-item--completed' : ''}`}
+      className={`task-item ${task.completed ? 'task-item--completed' : ''} ${
+        isPending ? 'task-item--pending-delete' : ''
+      }`}
       aria-label={`Завдання: ${task.title}`}
     >
       <div className="task-item__main">
-        <label className="task-item__checkbox-label" title={task.completed ? 'Позначити невиконаним' : 'Позначити виконаним'}>
+        <label
+          className="task-item__checkbox-label"
+          title={task.completed ? 'Позначити невиконаним' : 'Позначити виконаним'}
+        >
           <input
             type="checkbox"
             className="task-item__checkbox"
             checked={task.completed}
-            onChange={() => onToggle(task.id)}
+            disabled={isPending}
+            onChange={() => toggleTask(task.id)}
           />
           <span className="task-item__checkbox-custom" />
         </label>
@@ -62,29 +71,55 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete }) 
           )}
 
           <div className="task-item__status-info">
-            <span
-              className={`task-item__status-text ${
-                task.completed
-                  ? 'task-item__status-text--done'
-                  : 'task-item__status-text--pending'
-              }`}
-            >
-              {task.completed ? 'Виконано' : 'В процесі'}
-            </span>
+            {isPending ? (
+              <span className="task-item__status-text task-item__status-text--pending-delete">
+                Очікує видалення (5 сек)...
+              </span>
+            ) : (
+              <span
+                className={`task-item__status-text ${
+                  task.completed
+                    ? 'task-item__status-text--done'
+                    : 'task-item__status-text--pending'
+                }`}
+              >
+                {task.completed ? 'Виконано' : 'В процесі'}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       <div className="task-item__actions">
-        <button
-          type="button"
-          className="task-item__delete-btn"
-          onClick={() => onDelete(task.id)}
-          title="Видалити завдання"
-          aria-label={`Видалити завдання ${task.title}`}
-        >
-          Видалити
-        </button>
+        {isPending ? (
+          <button
+            type="button"
+            className="task-item__undo-inline-btn"
+            onClick={undoDeleteTask}
+          >
+            Скасувати
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="task-item__edit-btn"
+              onClick={() => setEditingTask(task)}
+              title="Редагувати завдання"
+            >
+              Редагувати
+            </button>
+            <button
+              type="button"
+              className="task-item__delete-btn"
+              onClick={() => requestDeleteTask(task.id)}
+              title="Видалити завдання"
+              aria-label={`Видалити завдання ${task.title}`}
+            >
+              Видалити
+            </button>
+          </>
+        )}
       </div>
     </article>
   );

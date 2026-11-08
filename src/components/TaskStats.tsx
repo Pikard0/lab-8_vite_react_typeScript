@@ -1,16 +1,13 @@
 import React from 'react';
-import type { Task } from '../types/task';
+import { useTaskContext } from '../hooks/useTaskContext';
 import './TaskStats.scss';
 
-interface TaskStatsProps {
-  tasks: Task[];
-  onClearCompleted?: () => void;
-}
+export const TaskStats: React.FC = () => {
+  const { counts, clearCompletedTasks, resetTasks } = useTaskContext();
 
-export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, onClearCompleted }) => {
-  const totalCount = tasks.length;
-  const completedCount = tasks.filter((task) => task.completed).length;
-  const activeCount = totalCount - completedCount;
+  const totalCount = counts.all;
+  const completedCount = counts.completed;
+  const activeCount = counts.active;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
@@ -51,18 +48,27 @@ export const TaskStats: React.FC<TaskStatsProps> = ({ tasks, onClearCompleted })
         </div>
       </div>
 
-      {completedCount > 0 && onClearCompleted && (
-        <div className="task-stats__actions">
+      <div className="task-stats__actions">
+        <button
+          type="button"
+          className="task-stats__reset-btn"
+          onClick={resetTasks}
+          title="Скинути список завдань до початкових даних"
+        >
+          Скинути дані
+        </button>
+
+        {completedCount > 0 && (
           <button
             type="button"
             className="task-stats__clear-btn"
-            onClick={onClearCompleted}
+            onClick={clearCompletedTasks}
             title="Видалити всі завершені завдання зі списку"
           >
             Очистити виконані ({completedCount})
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 };
