@@ -1,12 +1,22 @@
 @use '../styles/variables' as *;
 
-.toast {
+.toast-container {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
   z-index: 1000;
-  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   max-width: 440px;
+  width: calc(100% - 2rem);
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  min-width: 280px;
+  width: 100%;
   background-color: #1e293b;
   color: #ffffff;
   border-radius: $radius-md;
@@ -14,6 +24,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  animation: toastSlideIn 0.25s ease-out;
 
   &--info {
     border-left: 4px solid $color-primary;
@@ -36,13 +47,14 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.875rem 1rem;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   &__message {
     font-size: 0.875rem;
     font-weight: 500;
     line-height: 1.4;
+    word-break: break-word;
   }
 
   &__actions {
@@ -91,5 +103,16 @@
     height: 100%;
     background-color: $color-warning;
     transition: width 1s linear;
+  }
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

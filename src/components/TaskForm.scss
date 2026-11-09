@@ -7,12 +7,36 @@
   box-shadow: $shadow-sm;
   border: 1px solid $color-border;
   margin-bottom: 2rem;
+  transition: $transition-base;
+
+  &--editing {
+    border-color: $color-primary;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
 
   &__title {
     font-size: 1.25rem;
     font-weight: 700;
-    margin-bottom: 1.25rem;
+    margin: 0;
     color: $color-text-main;
+  }
+
+  &__editing-badge {
+    background-color: $color-primary-light;
+    color: $color-primary;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: $radius-full;
   }
 }
 

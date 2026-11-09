@@ -34,6 +34,11 @@
     opacity: 0.8;
   }
 
+  &--editing {
+    border-color: $color-primary;
+    background-color: $color-primary-light;
+  }
+
   &__main {
     display: flex;
     align-items: flex-start;
@@ -190,6 +195,11 @@
       color: #b45309;
       font-weight: 600;
     }
+
+    &--editing {
+      color: $color-primary;
+      font-weight: 600;
+    }
   }
 
   &__actions {
@@ -211,6 +221,16 @@
     &:hover {
       background-color: $color-primary-light;
       border-color: $color-primary;
+    }
+
+    &--active {
+      background-color: $color-primary;
+      color: #ffffff;
+      border-color: $color-primary;
+
+      &:hover {
+        background-color: $color-primary-hover;
+      }
     }
   }
 

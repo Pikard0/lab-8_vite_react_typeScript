@@ -12,14 +12,14 @@ export interface TaskContextType {
   setPrioritySort: (sort: PrioritySortOrder) => void;
   editingTask: Task | null;
   setEditingTask: (task: Task | null) => void;
-  toast: ToastNotification | null;
-  hideToast: () => void;
+  toasts: ToastNotification[];
+  hideToast: (id: string) => void;
   addTask: (task: Omit<Task, 'id' | 'completed' | 'pendingDelete'>) => void;
   toggleTask: (id: number) => void;
   updateTask: (id: number, data: Omit<Task, 'id' | 'pendingDelete'>) => void;
   requestDeleteTask: (id: number) => void;
   confirmDeleteTask: (id: number) => void;
-  undoDeleteTask: () => void;
+  undoDeleteTask: (taskId: number) => void;
   clearCompletedTasks: () => void;
   resetTasks: () => void;
   counts: {

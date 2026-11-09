@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Priority, Task } from '../types/task';
 import { useTaskContext } from '../hooks/useTaskContext';
 import './TaskForm.scss';
@@ -15,6 +15,13 @@ const FormFields: React.FC<FormFieldsProps> = ({ editingTask, onSave, onCancel }
   const [category, setCategory] = useState(editingTask ? editingTask.category : 'React');
   const [priority, setPriority] = useState<Priority>(editingTask ? editingTask.priority : 'medium');
   const [error, setError] = useState('');
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingTask && titleInputRef.current) {
+      titleInputRef.current.focus();
+    }
+  }, [editingTask]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,10 +43,18 @@ const FormFields: React.FC<FormFieldsProps> = ({ editingTask, onSave, onCancel }
   };
 
   return (
-    <section className="task-form-card">
-      <h2 className="task-form-card__title">
-        {editingTask ? 'Редагувати завдання' : 'Додати завдання'}
-      </h2>
+    <section
+      id="task-form-card"
+      className={`task-form-card ${editingTask ? 'task-form-card--editing' : ''}`}
+    >
+      <div className="task-form-card__header">
+        <h2 className="task-form-card__title">
+          {editingTask ? `Редагування завдання: "${editingTask.title}"` : 'Додати завдання'}
+        </h2>
+        {editingTask && (
+          <span className="task-form-card__editing-badge">Режим редагування</span>
+        )}
+      </div>
       <form className="task-form" onSubmit={handleSubmit} noValidate>
         <div className="task-form__field">
           <label htmlFor="task-title" className="task-form__label">
@@ -47,6 +62,7 @@ const FormFields: React.FC<FormFieldsProps> = ({ editingTask, onSave, onCancel }
           </label>
           <input
             id="task-title"
+            ref={titleInputRef}
             type="text"
             className={`task-form__input ${error ? 'task-form__input--error' : ''}`}
             placeholder="Наприклад: Здати лабу з React"

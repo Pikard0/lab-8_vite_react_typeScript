@@ -35,8 +35,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [prioritySort, setPrioritySort] = useState<PrioritySortOrder>('none');
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
-  const [toast, setToast] = useState<ToastNotification | null>(null);
+  const [toasts, setToasts] = useState<ToastNotification[]>([]);
 
   useEffect(() => {
     try {
@@ -77,68 +76,78 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [tasks]);
 
   useEffect(() => {
-    if (pendingDeleteId === null) {
+    const hasUndoable = toasts.some((t) => t.isUndoable);
+    if (!hasUndoable) {
       return;
     }
 
     const interval = setInterval(() => {
-      setToast((currentToast) => {
-        if (!currentToast || !currentToast.isUndoable) {
-          return currentToast;
-        }
-        const currentCount = currentToast.countdown ?? 5;
-        const next = currentCount - 1;
-
-        if (next <= 0) {
-          clearInterval(interval);
-          dispatch({ type: 'confirmDelete', payload: pendingDeleteId });
-          setPendingDeleteId(null);
+      setToasts((prevToasts) => {
+        let hasChanges = false;
+        const updated = prevToasts.map((toast) => {
+          if (!toast.isUndoable || toast.countdown === undefined) {
+            return toast;
+          }
+          hasChanges = true;
+          const next = toast.countdown - 1;
+          if (next <= 0) {
+            if (toast.taskId !== undefined) {
+              dispatch({ type: 'confirmDelete', payload: toast.taskId });
+            }
+            return {
+              ...toast,
+              message: 'Завдання остаточно видалено',
+              type: 'info' as const,
+              isUndoable: false,
+              countdown: undefined,
+            };
+          }
+          const baseText = toast.message.split(' буде видалено')[0];
           return {
-            id: String(Date.now()),
-            message: 'Завдання остаточно видалено',
-            type: 'info',
-            isUndoable: false,
+            ...toast,
+            message: `${baseText} буде видалено через ${next} сек`,
+            countdown: next,
           };
-        }
-
-        return {
-          ...currentToast,
-          message: `Завдання буде видалено через ${next} сек`,
-          countdown: next,
-        };
+        });
+        return hasChanges ? updated : prevToasts;
       });
     }, 1000);
 
     return () => {
       clearInterval(interval);
     };
-  }, [pendingDeleteId]);
+  }, [toasts]);
 
   useEffect(() => {
-    if (!toast || toast.isUndoable) {
+    const autoDismissable = toasts.filter((t) => !t.isUndoable);
+    if (autoDismissable.length === 0) {
       return;
     }
-    const timer = setTimeout(() => {
-      setToast(null);
-    }, 3500);
+
+    const timers = autoDismissable.map((toast) =>
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== toast.id));
+      }, 3000)
+    );
 
     return () => {
-      clearTimeout(timer);
+      timers.forEach((timer) => clearTimeout(timer));
     };
-  }, [toast]);
+  }, [toasts]);
 
-  const hideToast = useCallback(() => {
-    setToast(null);
+  const hideToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
   const addTask = useCallback((data: Omit<Task, 'id' | 'completed' | 'pendingDelete'>) => {
     dispatch({ type: 'add', payload: data });
-    setToast({
-      id: String(Date.now()),
+    const newToast: ToastNotification = {
+      id: `add_${Date.now()}`,
       message: 'Нове завдання успішно додано',
       type: 'success',
       isUndoable: false,
-    });
+    };
+    setToasts((prev) => [...prev, newToast]);
   }, []);
 
   const toggleTask = useCallback((id: number) => {
@@ -148,73 +157,74 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateTask = useCallback((id: number, data: Omit<Task, 'id' | 'pendingDelete'>) => {
     dispatch({ type: 'update', payload: { id, data } });
     setEditingTask(null);
-    setToast({
-      id: String(Date.now()),
+    const newToast: ToastNotification = {
+      id: `update_${Date.now()}`,
       message: 'Завдання успішно оновлено',
       type: 'success',
       isUndoable: false,
-    });
+    };
+    setToasts((prev) => [...prev, newToast]);
   }, []);
 
   const requestDeleteTask = useCallback((id: number) => {
-    if (pendingDeleteId !== null) {
-      dispatch({ type: 'confirmDelete', payload: pendingDeleteId });
-    }
+    const taskToDelete = tasks.find((t) => t.id === id);
+    const title = taskToDelete ? taskToDelete.title : '';
+
     dispatch({ type: 'requestDelete', payload: id });
-    setPendingDeleteId(id);
-    setToast({
-      id: String(Date.now()),
-      message: 'Завдання буде видалено через 5 сек',
+
+    const newToast: ToastNotification = {
+      id: `delete_${id}_${Date.now()}`,
+      taskId: id,
+      message: title ? `"${title}" буде видалено через 5 сек` : 'Завдання буде видалено через 5 сек',
       type: 'warning',
       isUndoable: true,
       countdown: 5,
-    });
-  }, [pendingDeleteId]);
+    };
+
+    setToasts((prev) => [...prev.filter((t) => t.taskId !== id), newToast]);
+  }, [tasks]);
 
   const confirmDeleteTask = useCallback((id: number) => {
     dispatch({ type: 'confirmDelete', payload: id });
-    if (pendingDeleteId === id) {
-      setPendingDeleteId(null);
-      setToast(null);
-    }
-  }, [pendingDeleteId]);
+    setToasts((prev) => prev.filter((t) => t.taskId !== id));
+  }, []);
 
-  const undoDeleteTask = useCallback(() => {
-    if (pendingDeleteId !== null) {
-      dispatch({ type: 'undoDelete', payload: pendingDeleteId });
-      setPendingDeleteId(null);
-      setToast({
-        id: String(Date.now()),
+  const undoDeleteTask = useCallback((taskId: number) => {
+    dispatch({ type: 'undoDelete', payload: taskId });
+    setToasts((prev) => [
+      ...prev.filter((t) => t.taskId !== taskId),
+      {
+        id: `undo_${Date.now()}`,
         message: 'Видалення завдання скасовано',
         type: 'info',
         isUndoable: false,
-      });
-    }
-  }, [pendingDeleteId]);
+      },
+    ]);
+  }, []);
 
   const clearCompletedTasks = useCallback(() => {
     dispatch({ type: 'clearCompleted' });
-    setToast({
-      id: String(Date.now()),
+    const newToast: ToastNotification = {
+      id: `clear_${Date.now()}`,
       message: 'Виконані завдання видалено',
       type: 'info',
       isUndoable: false,
-    });
+    };
+    setToasts((prev) => [...prev, newToast]);
   }, []);
 
   const resetTasks = useCallback(() => {
-    if (pendingDeleteId !== null) {
-      setPendingDeleteId(null);
-    }
     dispatch({ type: 'reset' });
     setEditingTask(null);
-    setToast({
-      id: String(Date.now()),
-      message: 'Дані скинуто до початкових',
-      type: 'info',
-      isUndoable: false,
-    });
-  }, [pendingDeleteId]);
+    setToasts([
+      {
+        id: `reset_${Date.now()}`,
+        message: 'Дані скинуто до початкових',
+        type: 'info',
+        isUndoable: false,
+      },
+    ]);
+  }, []);
 
   const counts = useMemo(() => {
     const validTasks = tasks.filter((t) => !t.pendingDelete);
@@ -264,7 +274,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setPrioritySort,
       editingTask,
       setEditingTask,
-      toast,
+      toasts,
       hideToast,
       addTask,
       toggleTask,
@@ -284,7 +294,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       searchQuery,
       prioritySort,
       editingTask,
-      toast,
+      toasts,
       hideToast,
       addTask,
       toggleTask,

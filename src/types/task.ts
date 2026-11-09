@@ -27,6 +27,7 @@ export type TaskAction =
 
 export interface ToastNotification {
   id: string;
+  taskId?: number;
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
   isUndoable?: boolean;

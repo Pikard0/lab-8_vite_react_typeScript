@@ -14,15 +14,26 @@ const priorityLabels: Record<Priority, string> = {
 };
 
 export const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
-  const { toggleTask, requestDeleteTask, undoDeleteTask, setEditingTask } = useTaskContext();
+  const { toggleTask, requestDeleteTask, undoDeleteTask, editingTask, setEditingTask } = useTaskContext();
 
   const isPending = Boolean(task.pendingDelete);
+  const isEditing = editingTask?.id === task.id;
+
+  const handleEditClick = () => {
+    setEditingTask(task);
+    setTimeout(() => {
+      const formEl = document.getElementById('task-form-card');
+      formEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const inputEl = document.getElementById('task-title') as HTMLInputElement | null;
+      inputEl?.focus();
+    }, 50);
+  };
 
   return (
     <article
       className={`task-item ${task.completed ? 'task-item--completed' : ''} ${
         isPending ? 'task-item--pending-delete' : ''
-      }`}
+      } ${isEditing ? 'task-item--editing' : ''}`}
       aria-label={`Завдання: ${task.title}`}
     >
       <div className="task-item__main">
@@ -34,7 +45,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
             type="checkbox"
             className="task-item__checkbox"
             checked={task.completed}
-            disabled={isPending}
+            disabled={isPending || isEditing}
             onChange={() => toggleTask(task.id)}
           />
           <span className="task-item__checkbox-custom" />
@@ -75,6 +86,10 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
               <span className="task-item__status-text task-item__status-text--pending-delete">
                 Очікує видалення (5 сек)...
               </span>
+            ) : isEditing ? (
+              <span className="task-item__status-text task-item__status-text--editing">
+                Редагується у формі зверху
+              </span>
             ) : (
               <span
                 className={`task-item__status-text ${
@@ -95,7 +110,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
           <button
             type="button"
             className="task-item__undo-inline-btn"
-            onClick={undoDeleteTask}
+            onClick={() => undoDeleteTask(task.id)}
           >
             Скасувати
           </button>
@@ -103,16 +118,19 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
           <>
             <button
               type="button"
-              className="task-item__edit-btn"
-              onClick={() => setEditingTask(task)}
+              className={`task-item__edit-btn ${
+                isEditing ? 'task-item__edit-btn--active' : ''
+              }`}
+              onClick={handleEditClick}
               title="Редагувати завдання"
             >
-              Редагувати
+              {isEditing ? 'Редагується' : 'Редагувати'}
             </button>
             <button
               type="button"
               className="task-item__delete-btn"
               onClick={() => requestDeleteTask(task.id)}
+              disabled={isEditing}
               title="Видалити завдання"
               aria-label={`Видалити завдання ${task.title}`}
             >
