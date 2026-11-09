@@ -22,7 +22,8 @@ export type TaskAction =
   | { type: 'confirmDelete'; payload: number }
   | { type: 'undoDelete'; payload: number }
   | { type: 'clearCompleted' }
-  | { type: 'reset' };
+  | { type: 'reset' }
+  | { type: 'sync'; payload: Task[] };
 
 export interface ToastNotification {
   id: string;

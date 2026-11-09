@@ -48,6 +48,26 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [tasks]);
 
   useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === TASKS_STORAGE_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            dispatch({ type: 'sync', payload: parsed });
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  useEffect(() => {
     const uncompletedCount = tasks.filter((t) => !t.completed && !t.pendingDelete).length;
     if (uncompletedCount > 0) {
       document.title = `Study Planner (${uncompletedCount} невиконаних)`;

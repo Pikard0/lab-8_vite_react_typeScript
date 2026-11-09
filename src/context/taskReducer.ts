@@ -57,6 +57,10 @@ export const taskReducer = (state: Task[], action: TaskAction): Task[] => {
       return initialTasks.map((task) => ({ ...task, pendingDelete: false }));
     }
 
+    case 'sync': {
+      return action.payload;
+    }
+
     default:
       return state;
   }
