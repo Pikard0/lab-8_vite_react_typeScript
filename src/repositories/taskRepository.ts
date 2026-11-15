@@ -69,10 +69,15 @@ const mapDtoToTask = (dto: TodoDto): Task => {
 
 export const taskRepository = {
   async getAll(params: GetAllParams = {}): Promise<GetAllResult> {
-    const { limit = 10, skip = 0, signal } = params;
+    const { limit = 0, skip = 0, signal } = params;
+
+    const queryParams: Record<string, string | number> = { limit };
+    if (skip > 0) {
+      queryParams.skip = skip;
+    }
 
     const response = await httpClient.get<TodosResponseDto>('/todos', {
-      params: { limit, skip },
+      params: queryParams,
       signal,
     });
 

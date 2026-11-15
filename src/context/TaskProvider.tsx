@@ -12,13 +12,11 @@ const priorityWeight = {
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [total, setTotal] = useState<number>(0);
   const [status, setStatus] = useState<FetchStatus>('idle');
   const [error, setError] = useState<string | null>(null);
 
   const [page, setPage] = useState<number>(1);
   const limit = 10;
-  const totalPages = Math.max(1, Math.ceil(total / limit));
 
   const [filter, setFilter] = useLocalStorage<FilterType>('study_planner_filter', 'all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,6 +33,24 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setReloadTrigger((prev) => prev + 1);
   }, []);
 
+  const handleSetFilter = useCallback(
+    (newFilter: FilterType) => {
+      setFilter(newFilter);
+      setPage(1);
+    },
+    [setFilter]
+  );
+
+  const handleSetSearchQuery = useCallback((query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+  }, []);
+
+  const handleSetPrioritySort = useCallback((sort: PrioritySortOrder) => {
+    setPrioritySort(sort);
+    setPage(1);
+  }, []);
+
   useEffect(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -46,27 +62,24 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setStatus('loading');
     setError(null);
 
-    const skip = (page - 1) * limit;
-
     taskRepository
-      .getAll({ limit, skip, signal: controller.signal })
+      .getAll({ limit: 0, signal: controller.signal })
       .then((res) => {
         setTasks(res.tasks);
-        setTotal(res.total);
         setStatus('success');
       })
       .catch((err: unknown) => {
         if (err instanceof Error && err.name === 'AbortError') {
           return;
         }
-        setError(err instanceof Error ? err.message : 'Не вдалося завантажити дані');
+        setError(err instanceof Error ? err.message : 'Не вдалося завантажити дані з API');
         setStatus('error');
       });
 
     return () => {
       controller.abort();
     };
-  }, [page, limit, reloadTrigger]);
+  }, [reloadTrigger]);
 
   useEffect(() => {
     const uncompletedCount = tasks.filter((t) => !t.completed && !t.pendingDelete).length;
@@ -98,28 +111,19 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
               taskRepository.delete(taskIdToDelete).catch(() => {});
               setTasks((prev) => prev.filter((t) => t.id !== taskIdToDelete));
             }
-            return {
-              ...toast,
-              message: 'Завдання остаточно видалено',
-              type: 'info' as const,
-              isUndoable: false,
-              countdown: undefined,
-            };
+            return null;
           }
-          const baseText = toast.message.split(' буде видалено')[0];
-          return {
-            ...toast,
-            message: `${baseText} буде видалено через ${next} сек`,
-            countdown: next,
-          };
+          return { ...toast, countdown: next };
         });
-        return hasChanges ? updated : prevToasts;
+
+        if (hasChanges) {
+          return updated.filter((t): t is ToastNotification => t !== null);
+        }
+        return prevToasts;
       });
     }, 1000);
 
-    return () => {
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [toasts]);
 
   useEffect(() => {
@@ -143,119 +147,154 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const addTask = useCallback(async (data: Omit<Task, 'id' | 'completed' | 'pendingDelete'>) => {
-    try {
-      const created = await taskRepository.create(data);
-      setTasks((prev) => [created, ...prev]);
-      setTotal((prev) => prev + 1);
+  const addTask = useCallback(
+    async (data: Omit<Task, 'id' | 'completed' | 'pendingDelete'>) => {
+      try {
+        const created = await taskRepository.create(data);
+        setTasks((prev) => [created, ...prev]);
+        setPage(1);
 
-      setToasts((prev) => [
-        ...prev,
-        {
-          id: `add_${Date.now()}`,
-          message: 'Нове завдання успішно створено в API',
-          type: 'success',
-          isUndoable: false,
-        },
-      ]);
-    } catch (err: unknown) {
-      setToasts((prev) => [
-        ...prev,
-        {
-          id: `add_err_${Date.now()}`,
-          message: err instanceof Error ? err.message : 'Помилка створення завдання',
-          type: 'error',
-          isUndoable: false,
-        },
-      ]);
-    }
-  }, []);
+        setToasts((prev) => [
+          ...prev,
+          {
+            id: `add_${Date.now()}`,
+            message: 'Нове завдання успішно створено в API',
+            type: 'success',
+            isUndoable: false,
+          },
+        ]);
+      } catch (err: unknown) {
+        setToasts((prev) => [
+          ...prev,
+          {
+            id: `add_err_${Date.now()}`,
+            message: err instanceof Error ? err.message : 'Помилка створення завдання',
+            type: 'error',
+            isUndoable: false,
+          },
+        ]);
+      }
+    },
+    []
+  );
 
-  const toggleTask = useCallback(async (id: number) => {
-    const target = tasks.find((t) => t.id === id);
-    if (!target) return;
+  const toggleTask = useCallback(
+    async (id: number) => {
+      const target = tasks.find((t) => t.id === id);
+      if (!target) {
+        return;
+      }
 
-    const nextCompleted = !target.completed;
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: nextCompleted } : t))
-    );
-
-    try {
-      await taskRepository.update(id, { completed: nextCompleted });
-    } catch {
+      const nextCompleted = !target.completed;
       setTasks((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, completed: target.completed } : t))
+        prev.map((task) => (task.id === id ? { ...task, completed: nextCompleted } : task))
       );
+
+      try {
+        await taskRepository.update(id, {
+          title: target.title,
+          description: target.description,
+          category: target.category,
+          priority: target.priority,
+          completed: nextCompleted,
+          userId: target.userId,
+        });
+
+        setToasts((prev) => [
+          ...prev,
+          {
+            id: `toggle_${Date.now()}`,
+            message: nextCompleted
+              ? 'Завдання позначено як виконане в API'
+              : 'Завдання повернено в активні в API',
+            type: 'info',
+            isUndoable: false,
+          },
+        ]);
+      } catch (err: unknown) {
+        setTasks((prev) =>
+          prev.map((task) => (task.id === id ? { ...task, completed: target.completed } : task))
+        );
+
+        setToasts((prev) => [
+          ...prev,
+          {
+            id: `toggle_err_${Date.now()}`,
+            message: err instanceof Error ? err.message : 'Помилка оновлення статусу в API',
+            type: 'error',
+            isUndoable: false,
+          },
+        ]);
+      }
+    },
+    [tasks]
+  );
+
+  const updateTask = useCallback(
+    async (id: number, data: Omit<Task, 'id' | 'pendingDelete'>) => {
+      try {
+        const updated = await taskRepository.update(id, data);
+        setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+        setEditingTask(null);
+
+        setToasts((prev) => [
+          ...prev,
+          {
+            id: `update_${Date.now()}`,
+            message: 'Зміни завдання успішно збережено в API',
+            type: 'success',
+            isUndoable: false,
+          },
+        ]);
+      } catch (err: unknown) {
+        setToasts((prev) => [
+          ...prev,
+          {
+            id: `update_err_${Date.now()}`,
+            message: err instanceof Error ? err.message : 'Помилка оновлення завдання',
+            type: 'error',
+            isUndoable: false,
+          },
+        ]);
+      }
+    },
+    []
+  );
+
+  const requestDeleteTask = useCallback(
+    (id: number) => {
+      const taskToDelete = tasks.find((t) => t.id === id);
+      if (!taskToDelete) {
+        return;
+      }
+
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, pendingDelete: true } : t))
+      );
+
       setToasts((prev) => [
-        ...prev,
+        ...prev.filter((t) => t.taskId !== id),
         {
-          id: `toggle_err_${Date.now()}`,
-          message: 'Помилка оновлення статусу на сервері',
-          type: 'error',
-          isUndoable: false,
+          id: `delete_${id}_${Date.now()}`,
+          taskId: id,
+          message: `Завдання "${taskToDelete.title}" буде видалено через 5 сек...`,
+          type: 'warning',
+          isUndoable: true,
+          countdown: 5,
         },
       ]);
-    }
-  }, [tasks]);
-
-  const updateTask = useCallback(async (id: number, data: Omit<Task, 'id' | 'pendingDelete'>) => {
-    try {
-      const updated = await taskRepository.update(id, data);
-      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
-      setEditingTask(null);
-
-      setToasts((prev) => [
-        ...prev,
-        {
-          id: `update_${Date.now()}`,
-          message: 'Завдання успішно оновлено через API',
-          type: 'success',
-          isUndoable: false,
-        },
-      ]);
-    } catch (err: unknown) {
-      setToasts((prev) => [
-        ...prev,
-        {
-          id: `update_err_${Date.now()}`,
-          message: err instanceof Error ? err.message : 'Помилка оновлення завдання',
-          type: 'error',
-          isUndoable: false,
-        },
-      ]);
-    }
-  }, []);
-
-  const requestDeleteTask = useCallback((id: number) => {
-    const taskToDelete = tasks.find((t) => t.id === id);
-    const title = taskToDelete ? taskToDelete.title : '';
-
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, pendingDelete: true } : t))
-    );
-
-    const newToast: ToastNotification = {
-      id: `delete_${id}_${Date.now()}`,
-      taskId: id,
-      message: title ? `"${title}" буде видалено через 5 сек` : 'Завдання буде видалено через 5 сек',
-      type: 'warning',
-      isUndoable: true,
-      countdown: 5,
-    };
-
-    setToasts((prev) => [...prev.filter((t) => t.taskId !== id), newToast]);
-  }, [tasks]);
+    },
+    [tasks]
+  );
 
   const confirmDeleteTask = useCallback(async (id: number) => {
     try {
       await taskRepository.delete(id);
-      setTasks((prev) => prev.filter((t) => t.id !== id));
-      setTotal((prev) => Math.max(0, prev - 1));
+      setTasks((prev) => prev.filter((task) => task.id !== id));
       setToasts((prev) => prev.filter((t) => t.taskId !== id));
     } catch {
-      setTasks((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, pendingDelete: false } : t))
-      );
+      setTasks((prev) => prev.filter((task) => task.id !== id));
+      setToasts((prev) => prev.filter((t) => t.taskId !== id));
     }
   }, []);
 
@@ -300,8 +339,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refetch();
   }, [refetch]);
 
-  const displayedTasks = useMemo(() => {
-    let result = [...tasks];
+  const filteredTasks = useMemo(() => {
+    let result = tasks.filter((t) => !t.pendingDelete);
 
     if (filter === 'completed') {
       result = result.filter((task) => task.completed);
@@ -328,6 +367,15 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return result;
   }, [tasks, filter, searchQuery, prioritySort]);
 
+  const total = filteredTasks.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+
+  const displayedTasks = useMemo(() => {
+    const start = (safePage - 1) * limit;
+    return filteredTasks.slice(start, start + limit);
+  }, [filteredTasks, safePage, limit]);
+
   const contextValue = useMemo(
     () => ({
       tasks,
@@ -335,17 +383,17 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       status,
       error,
       refetch,
-      page,
+      page: safePage,
       setPage,
       limit,
       total,
       totalPages,
       filter,
-      setFilter,
+      setFilter: handleSetFilter,
       searchQuery,
-      setSearchQuery,
+      setSearchQuery: handleSetSearchQuery,
       prioritySort,
-      setPrioritySort,
+      setPrioritySort: handleSetPrioritySort,
       selectedTaskId,
       setSelectedTaskId,
       editingTask,
@@ -368,14 +416,16 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       status,
       error,
       refetch,
-      page,
+      safePage,
       limit,
       total,
       totalPages,
       filter,
-      setFilter,
+      handleSetFilter,
       searchQuery,
+      handleSetSearchQuery,
       prioritySort,
+      handleSetPrioritySort,
       selectedTaskId,
       editingTask,
       toasts,
