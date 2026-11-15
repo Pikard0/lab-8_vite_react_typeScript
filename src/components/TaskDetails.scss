@@ -1,0 +1,164 @@
+@use '../styles/variables' as *;
+
+.task-details-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.task-details-modal {
+  width: 100%;
+  max-width: 540px;
+  background-color: $color-card-bg;
+  border-radius: $radius-lg;
+  border: 1px solid $color-border;
+  box-shadow: $shadow-lg;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid $color-border;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: $color-text-main;
+    margin: 0;
+  }
+
+  &__close-btn {
+    font-size: 1.5rem;
+    line-height: 1;
+    color: $color-text-muted;
+    transition: $transition-base;
+
+    &:hover {
+      color: $color-text-main;
+    }
+  }
+
+  &__body {
+    padding: 1.5rem;
+  }
+
+  &__state {
+    padding: 2rem;
+    text-align: center;
+    font-size: 0.9375rem;
+
+    &--loading {
+      color: $color-primary;
+    }
+
+    &--error {
+      color: $color-danger;
+    }
+  }
+
+  &__info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+  }
+
+  &__item-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__item-value {
+    font-size: 0.9375rem;
+    color: $color-text-main;
+    word-break: break-word;
+  }
+
+  &__badge {
+    display: inline-block;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border-radius: $radius-full;
+    width: fit-content;
+
+    &--category {
+      background-color: $color-purple-light;
+      color: $color-purple;
+    }
+
+    &--priority-low {
+      background-color: $color-success-light;
+      color: #047857;
+    }
+
+    &--priority-medium {
+      background-color: $color-warning-light;
+      color: #b45309;
+    }
+
+    &--priority-high {
+      background-color: $color-danger-light;
+      color: #b91c1c;
+    }
+  }
+
+  &__status {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: $color-warning;
+
+    &--completed {
+      color: $color-success;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid $color-border;
+    background-color: #f9fafb;
+  }
+
+  &__dismiss-btn {
+    padding: 0.5rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $color-text-main;
+    background-color: #ffffff;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    transition: $transition-base;
+
+    &:hover {
+      background-color: #f3f4f6;
+    }
+  }
+}

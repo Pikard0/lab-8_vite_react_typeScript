@@ -17,7 +17,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, React.Disp
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch {
-      //
+      void 0;
     }
   }, [key, value]);
 

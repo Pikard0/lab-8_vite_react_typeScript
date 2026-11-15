@@ -1,26 +1,8 @@
-import React, { useReducer, useEffect, useState, useMemo, useCallback } from 'react';
-import type { Task, FilterType, PrioritySortOrder, ToastNotification } from '../types/task';
-import { initialTasks } from '../data/initialTasks';
-import { taskReducer } from './taskReducer';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import type { Task, FilterType, PrioritySortOrder, ToastNotification, FetchStatus } from '../types/task';
 import { TaskContext } from './TaskContext';
+import { taskRepository } from '../repositories/taskRepository';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-
-const TASKS_STORAGE_KEY = 'study_planner_tasks';
-
-const initTasks = (): Task[] => {
-  try {
-    const stored = localStorage.getItem(TASKS_STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
-        return parsed.map((item) => ({ ...item, pendingDelete: false }));
-      }
-    }
-  } catch {
-    return initialTasks;
-  }
-  return initialTasks;
-};
 
 const priorityWeight = {
   high: 3,
@@ -29,42 +11,62 @@ const priorityWeight = {
 };
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [tasks, dispatch] = useReducer(taskReducer, [], initTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [total, setTotal] = useState<number>(0);
+  const [status, setStatus] = useState<FetchStatus>('idle');
+  const [error, setError] = useState<string | null>(null);
+
+  const [page, setPage] = useState<number>(1);
+  const limit = 10;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
   const [filter, setFilter] = useLocalStorage<FilterType>('study_planner_filter', 'all');
   const [searchQuery, setSearchQuery] = useState('');
   const [prioritySort, setPrioritySort] = useState<PrioritySortOrder>('none');
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
-  useEffect(() => {
-    try {
-      const activeTasks = tasks.filter((t) => !t.pendingDelete);
-      localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(activeTasks));
-    } catch {
-      // ignore
-    }
-  }, [tasks]);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === TASKS_STORAGE_KEY && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          if (Array.isArray(parsed)) {
-            dispatch({ type: 'sync', payload: parsed });
-          }
-        } catch {
-          // ignore
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
+  const refetch = useCallback(() => {
+    setReloadTrigger((prev) => prev + 1);
   }, []);
+
+  useEffect(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setStatus('loading');
+    setError(null);
+
+    const skip = (page - 1) * limit;
+
+    taskRepository
+      .getAll({ limit, skip, signal: controller.signal })
+      .then((res) => {
+        setTasks(res.tasks);
+        setTotal(res.total);
+        setStatus('success');
+      })
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.name === 'AbortError') {
+          return;
+        }
+        setError(err instanceof Error ? err.message : 'Не вдалося завантажити дані');
+        setStatus('error');
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [page, limit, reloadTrigger]);
 
   useEffect(() => {
     const uncompletedCount = tasks.filter((t) => !t.completed && !t.pendingDelete).length;
@@ -92,7 +94,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const next = toast.countdown - 1;
           if (next <= 0) {
             if (toast.taskId !== undefined) {
-              dispatch({ type: 'confirmDelete', payload: toast.taskId });
+              const taskIdToDelete = toast.taskId;
+              taskRepository.delete(taskIdToDelete).catch(() => {});
+              setTasks((prev) => prev.filter((t) => t.id !== taskIdToDelete));
             }
             return {
               ...toast,
@@ -139,38 +143,96 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const addTask = useCallback((data: Omit<Task, 'id' | 'completed' | 'pendingDelete'>) => {
-    dispatch({ type: 'add', payload: data });
-    const newToast: ToastNotification = {
-      id: `add_${Date.now()}`,
-      message: 'Нове завдання успішно додано',
-      type: 'success',
-      isUndoable: false,
-    };
-    setToasts((prev) => [...prev, newToast]);
+  const addTask = useCallback(async (data: Omit<Task, 'id' | 'completed' | 'pendingDelete'>) => {
+    try {
+      const created = await taskRepository.create(data);
+      setTasks((prev) => [created, ...prev]);
+      setTotal((prev) => prev + 1);
+
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: `add_${Date.now()}`,
+          message: 'Нове завдання успішно створено в API',
+          type: 'success',
+          isUndoable: false,
+        },
+      ]);
+    } catch (err: unknown) {
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: `add_err_${Date.now()}`,
+          message: err instanceof Error ? err.message : 'Помилка створення завдання',
+          type: 'error',
+          isUndoable: false,
+        },
+      ]);
+    }
   }, []);
 
-  const toggleTask = useCallback((id: number) => {
-    dispatch({ type: 'toggle', payload: id });
-  }, []);
+  const toggleTask = useCallback(async (id: number) => {
+    const target = tasks.find((t) => t.id === id);
+    if (!target) return;
 
-  const updateTask = useCallback((id: number, data: Omit<Task, 'id' | 'pendingDelete'>) => {
-    dispatch({ type: 'update', payload: { id, data } });
-    setEditingTask(null);
-    const newToast: ToastNotification = {
-      id: `update_${Date.now()}`,
-      message: 'Завдання успішно оновлено',
-      type: 'success',
-      isUndoable: false,
-    };
-    setToasts((prev) => [...prev, newToast]);
+    const nextCompleted = !target.completed;
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, completed: nextCompleted } : t))
+    );
+
+    try {
+      await taskRepository.update(id, { completed: nextCompleted });
+    } catch {
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, completed: target.completed } : t))
+      );
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: `toggle_err_${Date.now()}`,
+          message: 'Помилка оновлення статусу на сервері',
+          type: 'error',
+          isUndoable: false,
+        },
+      ]);
+    }
+  }, [tasks]);
+
+  const updateTask = useCallback(async (id: number, data: Omit<Task, 'id' | 'pendingDelete'>) => {
+    try {
+      const updated = await taskRepository.update(id, data);
+      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      setEditingTask(null);
+
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: `update_${Date.now()}`,
+          message: 'Завдання успішно оновлено через API',
+          type: 'success',
+          isUndoable: false,
+        },
+      ]);
+    } catch (err: unknown) {
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: `update_err_${Date.now()}`,
+          message: err instanceof Error ? err.message : 'Помилка оновлення завдання',
+          type: 'error',
+          isUndoable: false,
+        },
+      ]);
+    }
   }, []);
 
   const requestDeleteTask = useCallback((id: number) => {
     const taskToDelete = tasks.find((t) => t.id === id);
     const title = taskToDelete ? taskToDelete.title : '';
 
-    dispatch({ type: 'requestDelete', payload: id });
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, pendingDelete: true } : t))
+    );
 
     const newToast: ToastNotification = {
       id: `delete_${id}_${Date.now()}`,
@@ -184,42 +246,28 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToasts((prev) => [...prev.filter((t) => t.taskId !== id), newToast]);
   }, [tasks]);
 
-  const confirmDeleteTask = useCallback((id: number) => {
-    dispatch({ type: 'confirmDelete', payload: id });
-    setToasts((prev) => prev.filter((t) => t.taskId !== id));
+  const confirmDeleteTask = useCallback(async (id: number) => {
+    try {
+      await taskRepository.delete(id);
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+      setTotal((prev) => Math.max(0, prev - 1));
+      setToasts((prev) => prev.filter((t) => t.taskId !== id));
+    } catch {
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, pendingDelete: false } : t))
+      );
+    }
   }, []);
 
   const undoDeleteTask = useCallback((taskId: number) => {
-    dispatch({ type: 'undoDelete', payload: taskId });
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, pendingDelete: false } : t))
+    );
     setToasts((prev) => [
       ...prev.filter((t) => t.taskId !== taskId),
       {
         id: `undo_${Date.now()}`,
         message: 'Видалення завдання скасовано',
-        type: 'info',
-        isUndoable: false,
-      },
-    ]);
-  }, []);
-
-  const clearCompletedTasks = useCallback(() => {
-    dispatch({ type: 'clearCompleted' });
-    const newToast: ToastNotification = {
-      id: `clear_${Date.now()}`,
-      message: 'Виконані завдання видалено',
-      type: 'info',
-      isUndoable: false,
-    };
-    setToasts((prev) => [...prev, newToast]);
-  }, []);
-
-  const resetTasks = useCallback(() => {
-    dispatch({ type: 'reset' });
-    setEditingTask(null);
-    setToasts([
-      {
-        id: `reset_${Date.now()}`,
-        message: 'Дані скинуто до початкових',
         type: 'info',
         isUndoable: false,
       },
@@ -233,6 +281,24 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const active = all - completed;
     return { all, completed, active };
   }, [tasks]);
+
+  const clearCompletedTasks = useCallback(() => {
+    setTasks((prev) => prev.filter((task) => !task.completed));
+    setToasts((prev) => [
+      ...prev,
+      {
+        id: `clear_${Date.now()}`,
+        message: 'Виконані завдання видалено з поточного списку',
+        type: 'info',
+        isUndoable: false,
+      },
+    ]);
+  }, []);
+
+  const resetTasks = useCallback(() => {
+    setPage(1);
+    refetch();
+  }, [refetch]);
 
   const displayedTasks = useMemo(() => {
     let result = [...tasks];
@@ -266,12 +332,22 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     () => ({
       tasks,
       displayedTasks,
+      status,
+      error,
+      refetch,
+      page,
+      setPage,
+      limit,
+      total,
+      totalPages,
       filter,
       setFilter,
       searchQuery,
       setSearchQuery,
       prioritySort,
       setPrioritySort,
+      selectedTaskId,
+      setSelectedTaskId,
       editingTask,
       setEditingTask,
       toasts,
@@ -289,10 +365,18 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [
       tasks,
       displayedTasks,
+      status,
+      error,
+      refetch,
+      page,
+      limit,
+      total,
+      totalPages,
       filter,
       setFilter,
       searchQuery,
       prioritySort,
+      selectedTaskId,
       editingTask,
       toasts,
       hideToast,

@@ -11,7 +11,9 @@
     gap: 0.75rem;
   }
 
-  &--empty {
+  &--empty,
+  &--loading,
+  &--error {
     background-color: $color-card-bg;
     border: 2px dashed $color-border;
     border-radius: $radius-lg;
@@ -19,29 +21,72 @@
     text-align: center;
   }
 
-  &__empty-state {
+  &--error {
+    border-color: rgba(239, 68, 68, 0.4);
+    background-color: rgba(254, 242, 242, 0.5);
+  }
+
+  &__empty-state,
+  &__loading-state,
+  &__error-state {
     display: flex;
     flex-direction: column;
     align-items: center;
-    max-width: 400px;
+    max-width: 420px;
     margin: 0 auto;
   }
 
-  &__empty-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-  }
-
-  &__empty-title {
+  &__empty-title,
+  &__loading-title,
+  &__error-title {
     font-size: 1.25rem;
     font-weight: 700;
     color: $color-text-main;
     margin-bottom: 0.5rem;
   }
 
-  &__empty-desc {
+  &__error-title {
+    color: $color-danger;
+  }
+
+  &__empty-desc,
+  &__loading-desc,
+  &__error-desc {
     font-size: 0.9375rem;
     color: $color-text-muted;
     line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+
+  &__spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 3px solid rgba(59, 130, 246, 0.2);
+    border-top-color: $color-primary;
+    border-radius: 50%;
+    animation: taskListSpin 0.8s linear infinite;
+    margin-bottom: 1rem;
+  }
+
+  &__retry-btn {
+    padding: 0.5rem 1.25rem;
+    background-color: $color-danger;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: none;
+    border-radius: $radius-md;
+    cursor: pointer;
+    transition: $transition-base;
+
+    &:hover {
+      background-color: #dc2626;
+    }
+  }
+}
+
+@keyframes taskListSpin {
+  to {
+    transform: rotate(360deg);
   }
 }

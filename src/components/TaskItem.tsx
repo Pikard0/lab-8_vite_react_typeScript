@@ -14,7 +14,14 @@ const priorityLabels: Record<Priority, string> = {
 };
 
 export const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
-  const { toggleTask, requestDeleteTask, undoDeleteTask, editingTask, setEditingTask } = useTaskContext();
+  const {
+    toggleTask,
+    requestDeleteTask,
+    undoDeleteTask,
+    editingTask,
+    setEditingTask,
+    setSelectedTaskId,
+  } = useTaskContext();
 
   const isPending = Boolean(task.pendingDelete);
   const isEditing = editingTask?.id === task.id;
@@ -116,6 +123,14 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
           </button>
         ) : (
           <>
+            <button
+              type="button"
+              className="task-item__details-btn"
+              onClick={() => setSelectedTaskId(task.id)}
+              title="Переглянути деталі завдання"
+            >
+              Деталі
+            </button>
             <button
               type="button"
               className={`task-item__edit-btn ${

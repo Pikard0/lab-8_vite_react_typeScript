@@ -7,10 +7,10 @@ export const Header: React.FC = () => {
       <div className="header__container">
         <div className="header__brand">
           <h1 className="header__title">Study Planner</h1>
-          <span className="header__badge">Лабораторна робота №9</span>
+          <span className="header__badge">Лабораторна робота №10</span>
         </div>
         <p className="header__subtitle">
-          Список завдань та дедлайнів на семестр
+          Список завдань та дедлайнів на семестр (DummyJSON REST API)
         </p>
       </div>
     </header>
